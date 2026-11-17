@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ticket Triage</title>
+<style>
+  :root {
+    --bg: #f6f7f9; --panel: #ffffff; --text: #1c2430; --muted: #5b6676; --line: #dde2e8;
+    --accent: #2f5fd0; --accent-soft: #e6edfb; --ok: #1f7a4d; --ok-soft: #e3f4ea;
+    --warn: #9a5b00; --warn-soft: #fdf1dc; --bar: #c9d6f3;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text);
+         font: 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  header { padding: 20px 24px 8px; max-width: 1180px; margin: 0 auto; }
+  header h1 { margin: 0; font-size: 22px; }
+  header p { margin: 4px 0 0; color: var(--muted); font-size: 14px; }
+  main { max-width: 1180px; margin: 0 auto; padding: 12px 24px 32px;
+         display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: 20px; }
+  @media (max-width: 860px) { main { grid-template-columns: 1fr; padding: 12px 16px 24px; } header { padding: 16px 16px 4px; } }
+  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 18px; }
+  label { display: block; font-weight: 600; font-size: 13px; margin: 0 0 4px; }
+  input, textarea { width: 100%; font: inherit; padding: 8px 10px; border: 1px solid var(--line);
+                    border-radius: 6px; background: #fff; color: var(--text); }
+  textarea { min-height: 150px; resize: vertical; }
+  .field { margin-bottom: 14px; }
+  .samples { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
+  .samples button { font-size: 12px; padding: 4px 9px; border-radius: 999px; border: 1px solid var(--line);
+                    background: #fff; color: var(--muted); cursor: pointer; }
+  .actions { display: flex; gap: 10px; flex-wrap: wrap; }
+  .btn { font: inherit; font-weight: 600; padding: 9px 16px; border-radius: 6px; border: 1px solid var(--accent);
+         background: var(--accent); color: #fff; cursor: pointer; }
+  .btn.secondary { background: #fff; color: var(--accent); }
+  .btn:disabled { opacity: .6; cursor: wait; }
+  .hint { color: var(--muted); font-size: 12px; margin-top: 10px; }
+  .empty { color: var(--muted); }
+  .verdict { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 16px; }
+  .pill { padding: 4px 12px; border-radius: 999px; font-weight: 600; font-size: 13px; }
+  .pill.cat { background: var(--accent-soft); color: var(--accent); }
+  .pill.ok { background: var(--ok-soft); color: var(--ok); }
+  .pill.warn { background: var(--warn-soft); color: var(--warn); }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+  @media (max-width: 560px) { .grid2 { grid-template-columns: 1fr; } }
+  h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); margin: 0 0 8px; }
+  .row { display: grid; grid-template-columns: 110px 1fr 46px; gap: 8px; align-items: center; font-size: 13px; margin: 3px 0; }
+  .track { height: 8px; background: #eef1f5; border-radius: 4px; overflow: hidden; }
+  .fill { height: 100%; background: var(--bar); }
+  .row.top .fill { background: var(--accent); }
+  .row .v { text-align: right; font-variant-numeric: tabular-nums; color: var(--muted); }
+  .terms { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  .term { font-size: 12px; padding: 2px 8px; border-radius: 4px; background: #f0f2f5; border: 1px solid var(--line); }
+  .explain { margin-top: 18px; padding: 14px; border-radius: 8px; background: #f8f9fb; border: 1px solid var(--line); }
+  .explain p { margin: 6px 0 0; }
+  .meta { font-size: 12px; color: var(--muted); }
+  .reasons { font-size: 12px; color: var(--warn); margin: -6px 0 14px; }
+  footer { max-width: 1180px; margin: 0 auto; padding: 0 24px 24px; color: var(--muted); font-size: 12px; }
+  .error { color: #a0262c; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Ticket Triage</h1>
+  <p>TF-IDF + Logistic Regression predicts category and priority; an LLM (or a template) explains why. Trained on synthetic tickets.</p>
+</header>
+<main>
+  <section class="panel">
+    <div class="samples" id="samples"></div>
+    <div class="field">
+      <label for="subject">Subject</label>
+      <input id="subject" maxlength="300" value="Charged twice this month">
+    </div>
+    <div class="field">
+      <label for="body">Body</label>
+      <textarea id="body" maxlength="5000">Hi, I was charged $49 twice on my card for the Pro plan. This is blocking my work today, please sort it out.</textarea>
+    </div>
+    <div class="actions">
+      <button class="btn secondary" id="predictBtn">Predict</button>
+      <button class="btn" id="explainBtn">Predict + explain</button>
+    </div>
+    <div class="hint" id="modelHint">Loading model info...</div>
+  </section>
+  <section class="panel" id="result"><p class="empty">Run a prediction to see the result.</p></section>
+</main>
+<footer>Portfolio project. Metrics come from a held-out split of template-generated data and overstate real-world performance.</footer>
+<script>
+const SAMPLES = [
+  ["Billing", "Charged twice this month", "Hi, I was charged $49 twice on my card for the Pro plan. This is blocking my work today, please sort it out."],
+  ["Login", "Can't log in", "The password reset email never shows up in my inbox or spam. This is urgent, our whole team is locked out."],
+  ["Shipping", "Where is my order #50977?", "My order was supposed to arrive a week ago and the tracking page has not updated. Please look into it when you can."],
+  ["Feature idea", "Idea: dark mode", "It would be great if you could add dark mode to the mobile app. No rush on this."],
+  ["Ambiguous", "Need help", "I returned the headphones but my card was billed again for the monthly plan. Can somebody contact me about this?"],
+];
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const pretty = (s) => s.replace(/_/g, " ");
+
+SAMPLES.forEach(([name, subject, body]) => {
+  const b = document.createElement("button");
+  b.textContent = name;
+  b.onclick = () => { $("subject").value = subject; $("body").value = body; };
+  $("samples").appendChild(b);
+});
+
+function bars(target) {
+  const rows = Object.entries(target.probabilities).map(([label, p], i) =>
+    `<div class="row ${i === 0 ? "top" : ""}"><span>${esc(pretty(label))}</span>` +
+    `<div class="track"><div class="fill" style="width:${(p * 100).toFixed(1)}%"></div></div>` +
+    `<span class="v">${(p * 100).toFixed(0)}%</span></div>`).join("");
+  const terms = target.top_terms.map((t) => `<span class="term">${esc(t.term)}</span>`).join("") ||
+    '<span class="meta">no positive word terms</span>';
+  return rows + `<div class="meta" style="margin-top:8px">Top contributing terms</div><div class="terms">${terms}</div>`;
+}
+
+function render(data) {
+  const review = data.needs_human_review;
+  let html = `<div class="verdict">
+      <span class="pill cat">${esc(pretty(data.category.label))}</span>
+      <span class="pill cat">priority: ${esc(data.priority.label)}</span>
+      <span class="pill ${review ? "warn" : "ok"}">${review ? "needs human review" : "auto-route"}</span>
+    </div>`;
+  if (data.review_reasons.length) html += `<div class="reasons">${data.review_reasons.map(esc).join("; ")}</div>`;
+  html += `<div class="grid2"><div><h2>Category</h2>${bars(data.category)}</div><div><h2>Priority</h2>${bars(data.priority)}</div></div>`;
+  if (data.explanation) {
+    const e = data.explanation;
+    html += `<div class="explain"><h2>Explanation</h2><p>${esc(e.text)}</p>
+      <div class="meta" style="margin-top:8px">source: ${esc(e.source)} · provider: ${esc(e.provider)} (${esc(e.model)}) · ${e.latency_ms} ms</div></div>`;
+  }
+  $("result").innerHTML = html;
+}
+
+async function run(path) {
+  const btns = [$("predictBtn"), $("explainBtn")];
+  btns.forEach((b) => b.disabled = true);
+  $("result").innerHTML = `<p class="empty">${path === "/explain" ? "Predicting and asking the LLM (CPU-only, can take a while)..." : "Predicting..."}</p>`;
+  try {
+    const res = await fetch(path, {method: "POST", headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({subject: $("subject").value, body: $("body").value})});
+    const data = await res.json();
+    if (!res.ok) throw new Error(typeof data.detail === "string" ? data.detail : JSON.stringify(data.detail));
+    render(data);
+  } catch (err) {
+    $("result").innerHTML = `<p class="error">${esc(err.message)}</p>`;
+  } finally {
+    btns.forEach((b) => b.disabled = false);
+  }
+}
+$("predictBtn").onclick = () => run("/predict");
+$("explainBtn").onclick = () => run("/explain");
+
+fetch("/model-info").then((r) => r.json()).then((info) => {
+  const t = info.held_out_test || {};
+  const acc = (x) => x ? `${(x.accuracy * 100).toFixed(1)}%` : "n/a";
+  $("modelHint").textContent = `Held-out accuracy: category ${acc(t.category)}, priority ${acc(t.priority)} · ` +
+    `review threshold ${info.thresholds.category} / ${info.thresholds.priority} · explainer: ${info.llm.provider} (${info.llm.model})`;
+}).catch(() => { $("modelHint").textContent = "Model info unavailable."; });
+</script>
+</body>
+</html>
