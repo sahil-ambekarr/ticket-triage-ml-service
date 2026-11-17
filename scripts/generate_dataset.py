@@ -222,7 +222,9 @@ VAGUE_BODIES = [
     "I'm confused about what happened here.",
 ]
 
-OPENERS = ["Hi,", "Hello,", "Hi team,", "Hey,", "Good morning,", "Hello support,", "To whom it may concern,", "", "", ""]
+OPENERS = [
+    "Hi,", "Hello,", "Hi team,", "Hey,", "Good morning,", "Hello support,", "To whom it may concern,", "", "", "",
+]
 DETAILS = [
     "I already tried logging out and back in.", "I have attached a screenshot.", "This started {days} ago.",
     "I'm using {browser} on a laptop.", "My order number is {order}.", "I have been a customer for two years.",
