@@ -1,0 +1,247 @@
+{
+  "name": "Ticket triage (ML + LLM explanation)",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "ticket-triage",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "7c1e9a10-0001-4f6a-9b1e-000000000001",
+      "name": "Ticket Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [0, 300],
+      "webhookId": "7c1e9a10-0001-4f6a-9b1e-0000000000aa"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://api:4103/triage",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ ticket_id: $json.body.ticket_id, subject: $json.body.subject || '', body: $json.body.body }) }}",
+        "options": {
+          "timeout": 120000
+        }
+      },
+      "id": "7c1e9a10-0002-4f6a-9b1e-000000000002",
+      "name": "Call Triage API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [240, 300],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "7c1e9a10-0003-4f6a-9b1e-0000000000c1",
+              "leftValue": "={{ $json.needs_human_review }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "7c1e9a10-0003-4f6a-9b1e-000000000003",
+      "name": "Needs Human Review?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [480, 200]
+    },
+    {
+      "parameters": {
+        "mode": "manual",
+        "assignments": {
+          "assignments": [
+            {
+              "id": "7c1e9a10-0004-4f6a-9b1e-0000000000d1",
+              "name": "triage_status",
+              "value": "queued_for_human_review",
+              "type": "string"
+            },
+            {
+              "id": "7c1e9a10-0004-4f6a-9b1e-0000000000d2",
+              "name": "assigned_queue",
+              "value": "human_review",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "id": "7c1e9a10-0004-4f6a-9b1e-000000000004",
+      "name": "Queue For Human Review",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [720, 100]
+    },
+    {
+      "parameters": {
+        "mode": "manual",
+        "assignments": {
+          "assignments": [
+            {
+              "id": "7c1e9a10-0005-4f6a-9b1e-0000000000e1",
+              "name": "triage_status",
+              "value": "auto_routed",
+              "type": "string"
+            },
+            {
+              "id": "7c1e9a10-0005-4f6a-9b1e-0000000000e2",
+              "name": "assigned_queue",
+              "value": "={{ $json.category }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "id": "7c1e9a10-0005-4f6a-9b1e-000000000005",
+      "name": "Auto Route To Category Queue",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [720, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify($json) }}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "7c1e9a10-0006-4f6a-9b1e-000000000006",
+      "name": "Respond With Triage",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [960, 200]
+    },
+    {
+      "parameters": {
+        "mode": "manual",
+        "assignments": {
+          "assignments": [
+            {
+              "id": "7c1e9a10-0007-4f6a-9b1e-0000000000f1",
+              "name": "triage_status",
+              "value": "triage_api_failed",
+              "type": "string"
+            },
+            {
+              "id": "7c1e9a10-0007-4f6a-9b1e-0000000000f2",
+              "name": "assigned_queue",
+              "value": "human_review",
+              "type": "string"
+            },
+            {
+              "id": "7c1e9a10-0007-4f6a-9b1e-0000000000f3",
+              "name": "error_message",
+              "value": "={{ $json.error ? ($json.error.message || JSON.stringify($json.error)) : 'unknown error' }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": false,
+        "options": {}
+      },
+      "id": "7c1e9a10-0007-4f6a-9b1e-000000000007",
+      "name": "Build Error Response",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [480, 480]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify($json) }}",
+        "options": {
+          "responseCode": 502
+        }
+      },
+      "id": "7c1e9a10-0008-4f6a-9b1e-000000000008",
+      "name": "Respond With Error",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [720, 480]
+    }
+  ],
+  "connections": {
+    "Ticket Webhook": {
+      "main": [
+        [
+          { "node": "Call Triage API", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Call Triage API": {
+      "main": [
+        [
+          { "node": "Needs Human Review?", "type": "main", "index": 0 }
+        ],
+        [
+          { "node": "Build Error Response", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Needs Human Review?": {
+      "main": [
+        [
+          { "node": "Queue For Human Review", "type": "main", "index": 0 }
+        ],
+        [
+          { "node": "Auto Route To Category Queue", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Queue For Human Review": {
+      "main": [
+        [
+          { "node": "Respond With Triage", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Auto Route To Category Queue": {
+      "main": [
+        [
+          { "node": "Respond With Triage", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Build Error Response": {
+      "main": [
+        [
+          { "node": "Respond With Error", "type": "main", "index": 0 }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "active": false,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "tags": []
+}
