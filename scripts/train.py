@@ -43,6 +43,7 @@ from app.pipeline import MODEL_NAMES, RANDOM_STATE, build_pipeline, combine_text
 SERVED_MODEL = "logreg"
 TARGETS = ("category", "priority")
 THRESHOLD_GRID = (0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9)
+DEFAULT_THRESHOLDS = {"category": 0.6, "priority": 0.4}  # same defaults as app/config.py
 
 
 def load_rows(path: Path) -> list[dict[str, str]]:
@@ -85,6 +86,28 @@ def threshold_table(proba: np.ndarray, y_true: np.ndarray, classes: np.ndarray) 
             }
         )
     return table
+
+
+def routing_summary(
+    pipelines: dict, x_test: list[str], rows: list[dict[str, str]], idx_test: np.ndarray
+) -> dict[str, float | int]:
+    """What the API's review rule (category < 0.6 or priority < 0.4) does on the held-out split."""
+    cat_proba = pipelines["category"].predict_proba(x_test)
+    pri_proba = pipelines["priority"].predict_proba(x_test)
+    flagged = (cat_proba.max(axis=1) < DEFAULT_THRESHOLDS["category"]) | (
+        pri_proba.max(axis=1) < DEFAULT_THRESHOLDS["priority"]
+    )
+    cat_pred = pipelines["category"].classes_[cat_proba.argmax(axis=1)]
+    cat_true = np.array([rows[i]["category"] for i in idx_test])
+    correct = cat_pred == cat_true
+    return {
+        "category_threshold": DEFAULT_THRESHOLDS["category"],
+        "priority_threshold": DEFAULT_THRESHOLDS["priority"],
+        "flagged_for_review": int(flagged.sum()),
+        "flagged_share": round(float(flagged.mean()), 4),
+        "category_accuracy_auto_routed": round(float(correct[~flagged].mean()), 4),
+        "category_accuracy_flagged": round(float(correct[flagged].mean()), 4) if flagged.any() else None,
+    }
 
 
 def evaluate_target(
@@ -208,6 +231,8 @@ def train(
         )
         metrics["targets"][target] = result
         bundle["pipelines"][target] = pipeline
+
+    metrics["routing_at_default_thresholds"] = routing_summary(bundle["pipelines"], x_test, rows, idx_test)
 
     bundle["metadata"] = {
         "trained_on": metrics["generated_on"],

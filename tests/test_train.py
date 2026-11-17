@@ -19,3 +19,9 @@ def test_split_is_stratified_and_seeded(small_model):
     d = small_model["metrics"]["dataset"]
     assert d["rows_used"] == 600 and d["test_rows"] == 120
     assert small_model["metrics"]["split"]["random_state"] == 42
+
+
+def test_routing_summary_present(small_model):
+    routing = small_model["metrics"]["routing_at_default_thresholds"]
+    assert routing["category_threshold"] == 0.6 and routing["priority_threshold"] == 0.4
+    assert 0 <= routing["flagged_share"] <= 1
