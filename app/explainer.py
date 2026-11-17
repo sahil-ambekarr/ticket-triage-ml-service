@@ -5,6 +5,11 @@ and the top contributing terms. The ticket text itself is not sent, so the
 LLM can only restate the model's evidence, not invent its own reading of the
 ticket. If the LLM fails, times out or returns nothing, a template built from
 the same evidence is used instead.
+
+The review decision is never left to the LLM. A first eval run (see
+reports/explain_eval_v1_prompt.json) showed llama3.2 contradicting the
+needs_human_review flag in 4 of 12 explanations, so the LLM now explains only
+the labels and a fixed sentence about review is appended by code.
 """
 
 from __future__ import annotations
@@ -23,8 +28,9 @@ SYSTEM_PROMPT = (
     "You explain the output of a support-ticket classifier to a support agent. "
     "Use only the facts given: predicted labels, probabilities and the terms that pushed the model "
     "toward each label. Do not guess at details of the ticket that are not in the facts. "
-    "Write 2 to 3 plain sentences, no lists, no markdown. Name the predicted category, quote at least "
-    "one of the listed terms in double quotes, and say whether a person should review it."
+    "Write 2 plain sentences, no lists, no markdown. Name the predicted category, quote at least "
+    "one of the listed terms in double quotes, and mention the priority. "
+    "Do not say whether the ticket needs human review; that is decided elsewhere."
 )
 
 
@@ -36,6 +42,7 @@ class Explanation:
     model: str
     latency_ms: float
     error: str | None = None
+    llm_text: str | None = None  # raw LLM output before the review sentence is appended
 
     def to_dict(self) -> dict:
         return {
@@ -70,14 +77,17 @@ def build_prompt(prediction: Prediction) -> str:
             f"  terms: {terms}"
         )
 
-    review = "yes" if prediction.needs_human_review else "no"
-    reasons = "; ".join(prediction.review_reasons) or "both confidences above threshold"
     return (
         f"{block('Category', prediction.category)}\n"
-        f"{block('Priority', prediction.priority)}\n"
-        f"Needs human review: {review} ({reasons})\n\n"
+        f"{block('Priority', prediction.priority)}\n\n"
         "Explain this prediction."
     )
+
+
+def review_sentence(prediction: Prediction) -> str:
+    if prediction.needs_human_review:
+        return "Confidence is below the review threshold, so a person should check it before it is routed."
+    return "Both confidences are above the review threshold, so it can be routed automatically."
 
 
 def template_explanation(prediction: Prediction) -> str:
@@ -89,11 +99,7 @@ def template_explanation(prediction: Prediction) -> str:
         f"mainly because of {cat_terms}. "
         f"It set the priority to {pri.label} ({pri.confidence:.0%}), driven by {pri_terms}. "
     )
-    if prediction.needs_human_review:
-        text += "Confidence is below the review threshold, so a person should check it before it is routed."
-    else:
-        text += "Both confidences are above the review threshold, so it can be routed automatically."
-    return text
+    return text + review_sentence(prediction)
 
 
 class Explainer:
@@ -114,7 +120,8 @@ class Explainer:
                 text = self.provider.generate(SYSTEM_PROMPT, prompt)
                 latency = round((time.perf_counter() - started) * 1000, 1)
                 log.info("explanation generated provider=%s latency_ms=%s", self.provider.name, latency)
-                return Explanation(text, "llm", self.provider.name, self.provider.model, latency)
+                full = f"{text} {review_sentence(prediction)}"
+                return Explanation(full, "llm", self.provider.name, self.provider.model, latency, llm_text=text)
             except ProviderError as exc:
                 last_error = str(exc)
                 log.warning(
