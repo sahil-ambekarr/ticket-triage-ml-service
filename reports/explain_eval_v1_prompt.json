@@ -1,0 +1,247 @@
+{
+  "run_date": "2026-11-17",
+  "provider": "ollama",
+  "model": "llama3.2",
+  "timeout_seconds": 240.0,
+  "hardware": "CPU-only laptop (AMD integrated graphics, 16 GB RAM), Windows 11; Ollama shared with other jobs",
+  "python": "3.14.5",
+  "method": "sequential calls, temperature 0, one warm-up call excluded from the stats, no retries",
+  "warmup_latency_ms": 31591.7,
+  "summary": {
+    "tickets_attempted": 12,
+    "llm_answers": 12,
+    "fallbacks": 0,
+    "latency_ms_mean": 15835.3,
+    "latency_ms_p50": 15758.4,
+    "latency_ms_p95": 18991.9,
+    "latency_ms_max": 19024.5,
+    "names_category_rate": 1.0,
+    "names_top_term_rate": 1.0,
+    "fully_grounded_rate": 1.0
+  },
+  "results": [
+    {
+      "ticket_id": "T00012",
+      "true_category": "account",
+      "predicted_category": "account",
+      "predicted_priority": "low",
+      "needs_human_review": false,
+      "source": "llm",
+      "latency_ms": 18600.3,
+      "names_category": true,
+      "names_top_term": true,
+      "matched_terms": [
+        "account",
+        "on our",
+        "seats"
+      ],
+      "explanation": "The model predicts that the support ticket is categorized as an account issue, with a confidence of 99%. The top terms that contributed to this prediction include \"account\", \"on our\", and \"seats\", which suggests that the ticket is related to a problem with the user's account or seats. Given the high confidence level, it may not be necessary for a human review.",
+      "error": null
+    },
+    {
+      "ticket_id": "T00013",
+      "true_category": "billing",
+      "predicted_category": "billing",
+      "predicted_priority": "low",
+      "needs_human_review": false,
+      "source": "llm",
+      "latency_ms": 15249.2,
+      "names_category": true,
+      "names_top_term": true,
+      "matched_terms": [
+        "invoice",
+        "plan"
+      ],
+      "explanation": "The model predicts that the support ticket is categorized as billing with a confidence of 97%. The top terms that pushed the model toward this label are \"invoice\" and \"plan\", indicating that these words likely contributed to the classification. Since both probabilities are above the threshold, it's not necessary for a human review.",
+      "error": null
+    },
+    {
+      "ticket_id": "T00004",
+      "true_category": "bug",
+      "predicted_category": "bug",
+      "predicted_priority": "high",
+      "needs_human_review": false,
+      "source": "llm",
+      "latency_ms": 18965.3,
+      "names_category": true,
+      "names_top_term": true,
+      "matched_terms": [
+        "crashes",
+        "blank",
+        "error"
+      ],
+      "explanation": "The model predicts that the support ticket is a bug with a high confidence of 98%, as indicated by the top probability being \"bug\". The terms \"crashes\", \"blank\", and \"error\" are listed, suggesting that these issues may be related to the problem. Since both probabilities above the threshold are above 80%, it's recommended that a human review is not necessary at this time.",
+      "error": null
+    },
+    {
+      "ticket_id": "T00005",
+      "true_category": "feature_request",
+      "predicted_category": "feature_request",
+      "predicted_priority": "low",
+      "needs_human_review": false,
+      "source": "llm",
+      "latency_ms": 19024.5,
+      "names_category": true,
+      "names_top_term": true,
+      "matched_terms": [
+        "our team",
+        "team would",
+        "mode",
+        "really",
+        "would really",
+        "team would"
+      ],
+      "explanation": "The model predicts that the support ticket is a feature request, with a high confidence level of 100%. The terms \"our team\" and \"team would really\" strongly contributed to this classification, indicating that the language used suggests a request for a new feature or functionality. Given the low priority of 84%, it's recommended that a human review be conducted to ensure that the request is reasonable and aligns with the company's priorities.",
+      "error": null
+    },
+    {
+      "ticket_id": "T00016",
+      "true_category": "login_access",
+      "predicted_category": "login_access",
+      "predicted_priority": "low",
+      "needs_human_review": false,
+      "source": "llm",
+      "latency_ms": 16060.4,
+      "names_category": true,
+      "names_top_term": true,
+      "matched_terms": [
+        "reset",
+        "up",
+        "code"
+      ],
+      "explanation": "The model predicts that the support ticket is for a login access issue, with a high confidence of 97%. The terms \"reset\" and \"code\" are likely contributing factors to this prediction, as they suggest a technical problem related to accessing an account. Given the low priority level, it's not necessary for a human review at this time.",
+      "error": null
+    },
+    {
+      "ticket_id": "T00021",
+      "true_category": "refund_return",
+      "predicted_category": "refund_return",
+      "predicted_priority": "high",
+      "needs_human_review": false,
+      "source": "llm",
+      "latency_ms": 15906.2,
+      "names_category": true,
+      "names_top_term": true,
+      "matched_terms": [
+        "refund",
+        "return"
+      ],
+      "explanation": "The model predicts that the support ticket is a refund return, with a high confidence level of 100%. The top terms that contributed to this prediction include \"refund\" and \"return\", which are both present in the ticket description. Since the confidence levels for both priority and needs human review categories meet the threshold, it's recommended that the agent review the ticket to ensure accuracy.",
+      "error": null
+    },
+    {
+      "ticket_id": "T00018",
+      "true_category": "shipping",
+      "predicted_category": "shipping",
+      "predicted_priority": "high",
+      "needs_human_review": false,
+      "source": "llm",
+      "latency_ms": 15610.5,
+      "names_category": true,
+      "names_top_term": true,
+      "matched_terms": [
+        "delivery",
+        "longer",
+        "has been",
+        "much longer"
+      ],
+      "explanation": "The model predicts that the support ticket is categorized as shipping with a high confidence of 99%, indicating that it is likely related to issues with delivery times or tracking information. The terms \"delivery\", \"has been\", and \"much longer\" suggest that the issue is related to shipping, which supports this prediction. Since both probabilities are above the threshold, no human review is required for this classification.",
+      "error": null
+    },
+    {
+      "ticket_id": "T00151",
+      "true_category": "account",
+      "predicted_category": "account",
+      "predicted_priority": "low",
+      "needs_human_review": false,
+      "source": "llm",
+      "latency_ms": 14119.3,
+      "names_category": true,
+      "names_top_term": true,
+      "matched_terms": [
+        "account",
+        "on our",
+        "change my"
+      ],
+      "explanation": "The model has predicted that the support ticket is categorized as an account issue, with a confidence of 99%. The terms \"on our\" and \"change my\" suggest that the user is requesting to modify their account information, which supports this classification. Since both probabilities are above the threshold for human review, it's recommended that a supervisor reviews this prediction to ensure accuracy.",
+      "error": null
+    },
+    {
+      "ticket_id": "T00061",
+      "true_category": "billing",
+      "predicted_category": "billing",
+      "predicted_priority": "medium",
+      "needs_human_review": false,
+      "source": "llm",
+      "latency_ms": 16051.6,
+      "names_category": true,
+      "names_top_term": true,
+      "matched_terms": [
+        "invoice",
+        "renewal",
+        "of"
+      ],
+      "explanation": "The model predicts that the support ticket is categorized as billing with a high confidence of 92%, indicating that it is likely related to an invoice or renewal issue. The terms \"invoice\" and \"renewal\" are particularly relevant, suggesting that the ticket may be about payment or subscription-related matters. Since both confidences above the threshold are medium or higher, it's recommended that a human review the ticket to ensure accuracy.",
+      "error": null
+    },
+    {
+      "ticket_id": "T00017",
+      "true_category": "bug",
+      "predicted_category": "bug",
+      "predicted_priority": "urgent",
+      "needs_human_review": false,
+      "source": "llm",
+      "latency_ms": 13404.7,
+      "names_category": true,
+      "names_top_term": true,
+      "matched_terms": [
+        "crashes",
+        "error",
+        "error 500",
+        "500",
+        "critical",
+        "need help",
+        "help"
+      ],
+      "explanation": "The model predicts that the support ticket is a bug with a high level of confidence, as it was pushed toward this label by terms such as \"crashes\" and \"error 500\". The top predicted priority for the ticket is urgent, driven by phrases like \"critical\" and \"need help\", indicating that the issue requires immediate attention. Since both confidences are above the threshold, a human review is not necessary at this time.",
+      "error": null
+    },
+    {
+      "ticket_id": "T00023",
+      "true_category": "feature_request",
+      "predicted_category": "feature_request",
+      "predicted_priority": "low",
+      "needs_human_review": false,
+      "source": "llm",
+      "latency_ms": 13849.0,
+      "names_category": true,
+      "names_top_term": true,
+      "matched_terms": [
+        "love",
+        "add",
+        "rush",
+        "no"
+      ],
+      "explanation": "The model predicts that the support ticket is a feature request, with a confidence of 99%, due to the presence of terms like \"love\" and \"add\" which strongly suggest a desire for an enhancement or improvement. The low priority classification also supports this label, as the top term \"rush\" indicates a lack of urgency. Since both confidences are above the threshold, no human review is required at this time.",
+      "error": null
+    },
+    {
+      "ticket_id": "T00019",
+      "true_category": "login_access",
+      "predicted_category": "login_access",
+      "predicted_priority": "medium",
+      "needs_human_review": false,
+      "source": "llm",
+      "latency_ms": 13182.7,
+      "names_category": true,
+      "names_top_term": true,
+      "matched_terms": [
+        "after",
+        "login",
+        "credentials"
+      ],
+      "explanation": "The model predicts that the support ticket is categorized as a login access issue with a high confidence of 88%. The terms \"after\", \"login\", and \"credentials\" are particularly relevant to this classification, suggesting that the user's concern is related to accessing their account credentials after a certain period. Since both confidences above the threshold are medium or higher, it does not require human review.",
+      "error": null
+    }
+  ]
+}
