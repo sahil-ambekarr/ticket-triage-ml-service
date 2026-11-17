@@ -107,7 +107,9 @@ class TriageClassifier:
         return TargetPrediction(
             label=classes[best],
             confidence=round(float(proba[best]), 4),
-            probabilities={c: round(float(p), 4) for c, p in sorted(zip(classes, proba), key=lambda x: -x[1])},
+            probabilities={
+                c: round(float(p), 4) for c, p in sorted(zip(classes, proba, strict=True), key=lambda x: -x[1])
+            },
             top_terms=terms,
         )
 
