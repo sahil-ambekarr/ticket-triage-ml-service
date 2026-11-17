@@ -1,0 +1,38 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    env:
+      # Mock mode: no Ollama, no API key, no GPU needed.
+      LLM_PROVIDER: mock
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          # Same version the project was built and tested with locally.
+          python-version: "3.14"
+          cache: pip
+          cache-dependency-path: requirements*.txt
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-dev.txt
+
+      - name: Lint
+        run: ruff check .
+
+      - name: Check the committed dataset is reproducible
+        run: |
+          python -m scripts.generate_dataset --out /tmp/tickets.csv
+          cmp /tmp/tickets.csv data/tickets.csv
+
+      - name: Tests (train a 600-row model in a fixture, then exercise the API in mock mode)
+        run: pytest -q
